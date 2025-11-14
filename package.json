@@ -1,0 +1,36 @@
+{
+  "name": "potatospin",
+  "version": "1.0.0",
+  "description": "Potato Spin - Decentralized Spinning Wheel Game",
+  "main": "index.html",
+  "scripts": {
+    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "deploy": "hardhat run scripts/deploy.js",
+    "verify": "hardhat run scripts/verify.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Ya3er02/potatospin.git"
+  },
+  "keywords": [
+    "blockchain",
+    "ethereum",
+    "game",
+    "web3",
+    "chainlink",
+    "nft"
+  ],
+  "author": "Yaser (@Ya3er02)",
+  "license": "MIT",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.19.0"
+  },
+  "dependencies": {
+    "@chainlink/contracts": "^0.8.0",
+    "@openzeppelin/contracts": "^5.0.0",
+    "dotenv": "^16.3.1",
+    "ethers": "^6.9.0"
+  }
+}
