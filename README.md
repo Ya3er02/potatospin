@@ -1,6 +1,6 @@
 # 🥔 Potato Spin - Complete Blockchain Gaming Platform
 
-**🎮 Live Demo**: https://ya3er02.github.io/potatospin/
+**🎮 Live Demo**: https://rawcdn.githack.com/Ya3er02/potatospin/main/index.html
 
 A decentralized spinning wheel game built on Ethereum with provably fair randomness using Chainlink VRF.
 
