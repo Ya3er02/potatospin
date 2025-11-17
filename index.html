@@ -3,16 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Potato Spin - Interactive Game</title>
+    <title>Potato Pet - Virtual Pet Game</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Comic Sans MS', 'Arial', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             justify-content: center;
@@ -20,408 +20,299 @@
             min-height: 100vh;
             padding: 20px;
         }
-        
-        .container {
+
+        .game-container {
             background: white;
             border-radius: 20px;
-            padding: 40px;
+            padding: 30px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            text-align: center;
-            max-width: 500px;
+            max-width: 600px;
             width: 100%;
         }
-        
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
         h1 {
             color: #764ba2;
-            margin-bottom: 10px;
             font-size: 2.5em;
+            margin-bottom: 10px;
         }
-        
-        .subtitle {
-            color: #666;
+
+        .pet-area {
+            background: #f5f5f5;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
             margin-bottom: 30px;
-            font-size: 1.1em;
+            min-height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
-        
+
+        .pet-display {
+            font-size: 100px;
+            margin-bottom: 15px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .pet-name {
+            font-size: 1.5em;
+            color: #764ba2;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .pet-status {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stats-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stat {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .stat-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .stat-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .stat-value {
+            font-size: 0.8em;
+            color: #333;
+            margin-top: 5px;
+            font-weight: bold;
+        }
+
+        .progression {
+            background: #f9f9f9;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 25px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .level-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-weight: bold;
+            color: #764ba2;
+        }
+
+        .xp-bar {
+            width: 100%;
+            height: 15px;
+            background: #e0e0e0;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .xp-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FFD700 0%, #FFA500 100%);
+            border-radius: 8px;
+            transition: width 0.3s ease;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 12px 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-size: 1.1em;
+            grid-column: 1 / -1;
+            padding: 15px 20px;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(118, 75, 162, 0.6);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-action {
+            background: #66BB6A;
+        }
+
+        .btn-action:hover:not(:disabled) {
+            background: #558B5A;
+            transform: translateY(-2px);
+        }
+
+        .result-message {
+            text-align: center;
+            font-size: 1.1em;
+            color: #764ba2;
+            font-weight: bold;
+            min-height: 30px;
+            margin-top: 15px;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .wheel-container {
             position: relative;
-            width: 300px;
-            height: 300px;
-            margin: 30px auto;
+            width: 200px;
+            height: 200px;
+            margin: 20px auto;
         }
-        
+
         #wheel {
             width: 100%;
             height: 100%;
             border-radius: 50%;
-            border: 10px solid #764ba2;
+            border: 8px solid #764ba2;
             transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
         }
-        
+
         .pointer {
             position: absolute;
-            top: -20px;
+            top: -15px;
             left: 50%;
             transform: translateX(-50%);
             width: 0;
             height: 0;
-            border-left: 15px solid transparent;
-            border-right: 15px solid transparent;
-            border-top: 30px solid #764ba2;
+            border-left: 12px solid transparent;
+            border-right: 12px solid transparent;
+            border-top: 25px solid #764ba2;
             z-index: 10;
         }
-        
-        .potato-center {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 4em;
-            z-index: 5;
-            animation: float 3s ease-in-out infinite;
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translate(-50%, -50%) translateY(0px); }
-            50% { transform: translate(-50%, -50%) translateY(-10px); }
-        }
-        
-        #spin-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.2em;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 5px 15px rgba(118, 75, 162, 0.4);
-            margin-top: 20px;
-            aria-label: "Spin the potato wheel";
-        }
-        
-        #spin-btn:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(118, 75, 162, 0.6);
-        }
-        
-        #spin-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        
-        #result {
-            margin-top: 30px;
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #764ba2;
-            min-height: 40px;
-            role: "status";
-        }
-        
-        .prize {
-            animation: bounce 0.6s ease;
-        }
-        
-        @keyframes bounce {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-        
-        .stats {
-            margin-top: 20px;
-            display: flex;
-            justify-content: space-around;
-            padding: 15px;
-            background: #f5f5f5;
-            border-radius: 10px;
-        }
-        
-        .stat-item {
-            text-align: center;
-        }
-        
-        .stat-value {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #764ba2;
-        }
-        
-        .stat-label {
-            font-size: 0.9em;
-            color: #666;
-            margin-top: 5px;
-        }
-        
+
         @media (max-width: 600px) {
-            .wheel-container {
-                width: 200px;
-                height: 200px;
-            }
-            
-            #wheel {
-                width: 200px;
-                height: 200px;
-            }
-            
-            h1 {
-                font-size: 1.8em;
-            }
-            
-            #spin-btn {
-                font-size: 16px;
-                padding: 12px 24px;
-            }
-            
-            .container {
-                padding: 20px;
-            }
-        }
-        
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border-width: 0;
+            h1 { font-size: 1.8em; }
+            .pet-display { font-size: 70px; }
+            .game-container { padding: 20px; }
+            .stats-container { grid-template-columns: 1fr; }
+            button { font-size: 0.9em; padding: 10px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🥔 Potato Spin</h1>
-        <p class="subtitle">Spin the wheel and test your luck!</p>
-        
-        <div id="wheel-description" class="sr-only">
-            A spinning wheel with 8 prize segments ranging from Try Again to JACKPOT. Click the button below to spin and win prizes.
+    <div class="game-container">
+        <div class="header">
+            <h1>🥔 Potato Pet</h1>
+            <p>Take care of your virtual potato!</p>
         </div>
-        
+
+        <div class="pet-area">
+            <div class="pet-display" id="petDisplay">🥔</div>
+            <div class="pet-name" id="petName">My Potato</div>
+            <div class="pet-status" id="petStatus">Happy & Healthy</div>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat">
+                <div class="stat-label">Hunger</div>
+                <div class="stat-bar">
+                    <div class="stat-fill" id="hungerFill" style="width: 100%;"></div>
+                </div>
+                <div class="stat-value" id="hungerValue">100/150</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Happiness</div>
+                <div class="stat-bar">
+                    <div class="stat-fill" id="happinessFill" style="width: 100%; background: linear-gradient(90deg, #FFA726 0%, #FB8C00 100%);"></div>
+                </div>
+                <div class="stat-value" id="happinessValue">100/150</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Cleanliness</div>
+                <div class="stat-bar">
+                    <div class="stat-fill" id="cleanlinessFill" style="width: 100%; background: linear-gradient(90deg, #4FC3F7 0%, #0288D1 100%);"></div>
+                </div>
+                <div class="stat-value" id="cleanlinessValue">100/150</div>
+            </div>
+        </div>
+
+        <div class="progression">
+            <div class="level-info">
+                <span id="levelDisplay">Level 1</span>
+                <span id="xpDisplay">0 / 100 XP</span>
+            </div>
+            <div class="xp-bar">
+                <div class="xp-fill" id="xpFill" style="width: 0%;"></div>
+            </div>
+        </div>
+
         <div class="wheel-container">
             <div class="pointer"></div>
-            <canvas id="wheel" width="300" height="300" aria-label="The spinning potato wheel"></canvas>
-            <div class="potato-center">🥔</div>
+            <canvas id="wheel" width="200" height="200" aria-label="Spin wheel for random outcomes"></canvas>
         </div>
-        
-        <button id="spin-btn" 
-                aria-label="Spin the potato wheel to win prizes" 
-                aria-live="polite"
-                aria-describedby="wheel-description">
-            SPIN THE POTATO!
-        </button>
-        
-        <div id="result" role="status" aria-live="assertive" aria-atomic="true"></div>
-        
-        <div class="stats">
-            <div class="stat-item">
-                <div class="stat-value" id="spins">0</div>
-                <div class="stat-label">Total Spins</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-value" id="wins">0</div>
-                <div class="stat-label">Big Wins</div>
-            </div>
+
+        <div class="controls">
+            <button class="btn-action" onclick="saveGame()">💾 Save</button>
+            <button class="btn-action" onclick="resetGame()">🔄 Reset</button>
+            <button class="btn-primary" id="spinBtn" onclick="spin()" aria-label="Spin the wheel">SPIN THE WHEEL! 🎡</button>
         </div>
+
+        <div class="result-message" id="resultMessage"></div>
     </div>
-    
-    <script>
-        const SPIN_DURATION = 4000;
-        const canvas = document.getElementById('wheel');
-        const ctx = canvas.getContext('2d');
-        const spinBtn = document.getElementById('spin-btn');
-        const result = document.getElementById('result');
-        const spinsDisplay = document.getElementById('spins');
-        const winsDisplay = document.getElementById('wins');
-        
-        let totalSpins = 0;
-        let totalWins = 0;
-        let isSpinning = false;
-        let lastSpinTime = 0;
-        
-        const prizes = [
-            { label: '🎉 JACKPOT', color: '#FFD700', value: 1000 },
-            { label: '💎 Diamond', color: '#4FC3F7', value: 500 },
-            { label: '🍀 Lucky', color: '#66BB6A', value: 200 },
-            { label: '⭐ Star', color: '#FFA726', value: 100 },
-            { label: '🎁 Gift', color: '#EF5350', value: 50 },
-            { label: '🎈 Balloon', color: '#AB47BC', value: 20 },
-            { label: '🍭 Candy', color: '#EC407A', value: 10 },
-            { label: '😢 Try Again', color: '#78909C', value: 0 }
-        ];
-        
-        function setupCanvas() {
-            try {
-                const dpr = window.devicePixelRatio || 1;
-                const rect = canvas.getBoundingClientRect();
-                
-                canvas.width = rect.width * dpr;
-                canvas.height = rect.height * dpr;
-                
-                ctx.scale(dpr, dpr);
-                
-                drawWheel();
-            } catch (error) {
-                console.error('Canvas setup error:', error);
-                result.textContent = '⚠️ Canvas initialization failed';
-            }
-        }
-        
-        function drawWheel() {
-            try {
-                if (!canvas || !ctx) {
-                    throw new Error('Canvas context not properly initialized');
-                }
-                
-                const anglePerSegment = (2 * Math.PI) / prizes.length;
-                
-                prizes.forEach((prize, index) => {
-                    const startAngle = index * anglePerSegment;
-                    const endAngle = startAngle + anglePerSegment;
-                    
-                    ctx.beginPath();
-                    ctx.moveTo(150, 150);
-                    ctx.arc(150, 150, 150, startAngle, endAngle);
-                    ctx.closePath();
-                    ctx.fillStyle = prize.color;
-                    ctx.fill();
-                    ctx.strokeStyle = '#fff';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                    
-                    ctx.save();
-                    ctx.translate(150, 150);
-                    ctx.rotate(startAngle + anglePerSegment / 2);
-                    ctx.textAlign = 'center';
-                    ctx.fillStyle = '#fff';
-                    ctx.font = 'bold 14px Arial';
-                    ctx.fillText(prize.label, 80, 5);
-                    ctx.restore();
-                });
-            } catch (error) {
-                console.error('Wheel drawing error:', error);
-                result.textContent = '⚠️ Failed to draw wheel';
-            }
-        }
-        
-        function saveStats() {
-            try {
-                const gameState = {
-                    totalSpins: totalSpins,
-                    totalWins: totalWins,
-                    lastPlayDate: new Date().toISOString(),
-                    timestamp: Date.now()
-                };
-                localStorage.setItem('potatoSpinStats', JSON.stringify(gameState));
-            } catch (e) {
-                console.warn('Storage quota exceeded:', e);
-            }
-        }
-        
-        function loadStats() {
-            try {
-                const saved = localStorage.getItem('potatoSpinStats');
-                if (saved) {
-                    const data = JSON.parse(saved);
-                    totalSpins = data.totalSpins || 0;
-                    totalWins = data.totalWins || 0;
-                    updateDisplay();
-                }
-            } catch (e) {
-                console.error('Failed to load stats:', e);
-            }
-        }
-        
-        function updateDisplay() {
-            spinsDisplay.textContent = totalSpins;
-            winsDisplay.textContent = totalWins;
-        }
-        
-        function spin() {
-            try {
-                if (isSpinning) {
-                    console.warn('Spin already in progress');
-                    return;
-                }
-                
-                const now = Date.now();
-                if (now - lastSpinTime < SPIN_DURATION) {
-                    console.warn('Please wait for current spin to finish');
-                    return;
-                }
-                
-                isSpinning = true;
-                lastSpinTime = now;
-                spinBtn.disabled = true;
-                result.textContent = '🎡 Spinning...';
-                result.className = '';
-                
-                const rotations = 5 + Math.random() * 5;
-                const randomDegree = Math.random() * 360;
-                const totalDegrees = (rotations * 360) + randomDegree;
-                
-                canvas.style.transition = `transform ${SPIN_DURATION}ms cubic-bezier(0.17, 0.67, 0.12, 0.99)`;
-                canvas.style.transform = `rotate(${totalDegrees}deg)`;
-                
-                setTimeout(() => {
-                    calculateWinner(randomDegree);
-                    isSpinning = false;
-                    spinBtn.disabled = false;
-                }, SPIN_DURATION);
-                
-            } catch (error) {
-                console.error('Spin error:', error);
-                result.textContent = '⚠️ An error occurred during spin';
-                isSpinning = false;
-                spinBtn.disabled = false;
-            }
-        }
-        
-        function calculateWinner(randomDegree) {
-            try {
-                const adjustedAngle = (360 - (randomDegree % 360)) % 360;
-                const segmentAngle = 360 / prizes.length;
-                const winningIndex = Math.floor((adjustedAngle % 360) / segmentAngle) % prizes.length;
-                
-                if (winningIndex < 0 || winningIndex >= prizes.length) {
-                    throw new Error('Invalid winning index calculated');
-                }
-                
-                const prize = prizes[winningIndex];
-                
-                result.textContent = `You won: ${prize.label}!`;
-                result.className = 'prize';
-                
-                totalSpins++;
-                if (prize.value >= 200) {
-                    totalWins++;
-                }
-                
-                updateDisplay();
-                saveStats();
-                
-                console.log(`Winner: ${prize.label} (Index: ${winningIndex}, Value: ${prize.value})`);
-            } catch (error) {
-                console.error('Winner calculation error:', error);
-                result.textContent = '⚠️ Failed to calculate winner';
-            }
-        }
-        
-        window.addEventListener('DOMContentLoaded', () => {
-            try {
-                setupCanvas();
-                loadStats();
-            } catch (error) {
-                console.error('Initialization error:', error);
-                result.textContent = '⚠️ Failed to initialize game';
-            }
-        });
-        
-        window.addEventListener('resize', setupCanvas);
-        
-        spinBtn.addEventListener('click', spin);
-    </script>
+
+    <script src="PotatoPet.js"></script>
+    <script src="StatBar.js"></script>
+    <script src="SpinWheel.js"></script>
+    <script src="SaveManager.js"></script>
+    <script src="main.js"></script>
 </body>
 </html>
