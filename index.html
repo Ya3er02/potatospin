@@ -10,7 +10,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
             font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -20,7 +20,7 @@
             min-height: 100vh;
             padding: 20px;
         }
-
+        
         .container {
             background: white;
             border-radius: 20px;
@@ -30,26 +30,26 @@
             max-width: 500px;
             width: 100%;
         }
-
+        
         h1 {
             color: #764ba2;
             margin-bottom: 10px;
             font-size: 2.5em;
         }
-
+        
         .subtitle {
             color: #666;
             margin-bottom: 30px;
             font-size: 1.1em;
         }
-
+        
         .wheel-container {
             position: relative;
             width: 300px;
             height: 300px;
             margin: 30px auto;
         }
-
+        
         #wheel {
             width: 100%;
             height: 100%;
@@ -57,7 +57,7 @@
             border: 10px solid #764ba2;
             transition: transform 4s cubic-bezier(0.17, 0.67, 0.12, 0.99);
         }
-
+        
         .pointer {
             position: absolute;
             top: -20px;
@@ -70,7 +70,7 @@
             border-top: 30px solid #764ba2;
             z-index: 10;
         }
-
+        
         .potato-center {
             position: absolute;
             top: 50%;
@@ -80,12 +80,12 @@
             z-index: 5;
             animation: float 3s ease-in-out infinite;
         }
-
+        
         @keyframes float {
             0%, 100% { transform: translate(-50%, -50%) translateY(0px); }
             50% { transform: translate(-50%, -50%) translateY(-10px); }
         }
-
+        
         #spin-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
@@ -97,35 +97,37 @@
             transition: all 0.3s ease;
             box-shadow: 0 5px 15px rgba(118, 75, 162, 0.4);
             margin-top: 20px;
+            aria-label: "Spin the potato wheel";
         }
-
+        
         #spin-btn:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 8px 20px rgba(118, 75, 162, 0.6);
         }
-
+        
         #spin-btn:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
-
+        
         #result {
             margin-top: 30px;
             font-size: 1.5em;
             font-weight: bold;
             color: #764ba2;
             min-height: 40px;
+            role: "status";
         }
-
+        
         .prize {
             animation: bounce 0.6s ease;
         }
-
+        
         @keyframes bounce {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.1); }
         }
-
+        
         .stats {
             margin-top: 20px;
             display: flex;
@@ -134,21 +136,58 @@
             background: #f5f5f5;
             border-radius: 10px;
         }
-
+        
         .stat-item {
             text-align: center;
         }
-
+        
         .stat-value {
             font-size: 1.5em;
             font-weight: bold;
             color: #764ba2;
         }
-
+        
         .stat-label {
             font-size: 0.9em;
             color: #666;
             margin-top: 5px;
+        }
+        
+        @media (max-width: 600px) {
+            .wheel-container {
+                width: 200px;
+                height: 200px;
+            }
+            
+            #wheel {
+                width: 200px;
+                height: 200px;
+            }
+            
+            h1 {
+                font-size: 1.8em;
+            }
+            
+            #spin-btn {
+                font-size: 16px;
+                padding: 12px 24px;
+            }
+            
+            .container {
+                padding: 20px;
+            }
+        }
+        
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border-width: 0;
         }
     </style>
 </head>
@@ -157,15 +196,24 @@
         <h1>🥔 Potato Spin</h1>
         <p class="subtitle">Spin the wheel and test your luck!</p>
         
+        <div id="wheel-description" class="sr-only">
+            A spinning wheel with 8 prize segments ranging from Try Again to JACKPOT. Click the button below to spin and win prizes.
+        </div>
+        
         <div class="wheel-container">
             <div class="pointer"></div>
-            <canvas id="wheel" width="300" height="300"></canvas>
+            <canvas id="wheel" width="300" height="300" aria-label="The spinning potato wheel"></canvas>
             <div class="potato-center">🥔</div>
         </div>
         
-        <button id="spin-btn">SPIN THE POTATO!</button>
+        <button id="spin-btn" 
+                aria-label="Spin the potato wheel to win prizes" 
+                aria-live="polite"
+                aria-describedby="wheel-description">
+            SPIN THE POTATO!
+        </button>
         
-        <div id="result"></div>
+        <div id="result" role="status" aria-live="assertive" aria-atomic="true"></div>
         
         <div class="stats">
             <div class="stat-item">
@@ -178,8 +226,9 @@
             </div>
         </div>
     </div>
-
+    
     <script>
+        const SPIN_DURATION = 4000;
         const canvas = document.getElementById('wheel');
         const ctx = canvas.getContext('2d');
         const spinBtn = document.getElementById('spin-btn');
@@ -190,8 +239,8 @@
         let totalSpins = 0;
         let totalWins = 0;
         let isSpinning = false;
+        let lastSpinTime = 0;
         
-        // Prize segments
         const prizes = [
             { label: '🎉 JACKPOT', color: '#FFD700', value: 1000 },
             { label: '💎 Diamond', color: '#4FC3F7', value: 500 },
@@ -203,75 +252,175 @@
             { label: '😢 Try Again', color: '#78909C', value: 0 }
         ];
         
-        // Draw the wheel
-        function drawWheel() {
-            const anglePerSegment = (2 * Math.PI) / prizes.length;
-            
-            prizes.forEach((prize, index) => {
-                const startAngle = index * anglePerSegment;
-                const endAngle = startAngle + anglePerSegment;
+        function setupCanvas() {
+            try {
+                const dpr = window.devicePixelRatio || 1;
+                const rect = canvas.getBoundingClientRect();
                 
-                // Draw segment
-                ctx.beginPath();
-                ctx.moveTo(150, 150);
-                ctx.arc(150, 150, 150, startAngle, endAngle);
-                ctx.closePath();
-                ctx.fillStyle = prize.color;
-                ctx.fill();
-                ctx.strokeStyle = '#fff';
-                ctx.lineWidth = 2;
-                ctx.stroke();
+                canvas.width = rect.width * dpr;
+                canvas.height = rect.height * dpr;
                 
-                // Draw text
-                ctx.save();
-                ctx.translate(150, 150);
-                ctx.rotate(startAngle + anglePerSegment / 2);
-                ctx.textAlign = 'center';
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 14px Arial';
-                ctx.fillText(prize.label, 80, 5);
-                ctx.restore();
-            });
+                ctx.scale(dpr, dpr);
+                
+                drawWheel();
+            } catch (error) {
+                console.error('Canvas setup error:', error);
+                result.textContent = '⚠️ Canvas initialization failed';
+            }
         }
         
-        // Spin the wheel
+        function drawWheel() {
+            try {
+                if (!canvas || !ctx) {
+                    throw new Error('Canvas context not properly initialized');
+                }
+                
+                const anglePerSegment = (2 * Math.PI) / prizes.length;
+                
+                prizes.forEach((prize, index) => {
+                    const startAngle = index * anglePerSegment;
+                    const endAngle = startAngle + anglePerSegment;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(150, 150);
+                    ctx.arc(150, 150, 150, startAngle, endAngle);
+                    ctx.closePath();
+                    ctx.fillStyle = prize.color;
+                    ctx.fill();
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    
+                    ctx.save();
+                    ctx.translate(150, 150);
+                    ctx.rotate(startAngle + anglePerSegment / 2);
+                    ctx.textAlign = 'center';
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 14px Arial';
+                    ctx.fillText(prize.label, 80, 5);
+                    ctx.restore();
+                });
+            } catch (error) {
+                console.error('Wheel drawing error:', error);
+                result.textContent = '⚠️ Failed to draw wheel';
+            }
+        }
+        
+        function saveStats() {
+            try {
+                const gameState = {
+                    totalSpins: totalSpins,
+                    totalWins: totalWins,
+                    lastPlayDate: new Date().toISOString(),
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('potatoSpinStats', JSON.stringify(gameState));
+            } catch (e) {
+                console.warn('Storage quota exceeded:', e);
+            }
+        }
+        
+        function loadStats() {
+            try {
+                const saved = localStorage.getItem('potatoSpinStats');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    totalSpins = data.totalSpins || 0;
+                    totalWins = data.totalWins || 0;
+                    updateDisplay();
+                }
+            } catch (e) {
+                console.error('Failed to load stats:', e);
+            }
+        }
+        
+        function updateDisplay() {
+            spinsDisplay.textContent = totalSpins;
+            winsDisplay.textContent = totalWins;
+        }
+        
         function spin() {
-            if (isSpinning) return;
-            
-            isSpinning = true;
-            spinBtn.disabled = true;
-            result.textContent = 'Spinning...';
-            result.className = '';
-            
-            // Random rotation (multiple full rotations + random angle)
-            const rotations = 5 + Math.random() * 5;
-            const randomDegree = Math.random() * 360;
-            const totalDegrees = (rotations * 360) + randomDegree;
-            
-            canvas.style.transform = `rotate(${totalDegrees}deg)`;
-            
-            setTimeout(() => {
-                const normalizedAngle = (360 - (randomDegree % 360)) % 360;
+            try {
+                if (isSpinning) {
+                    console.warn('Spin already in progress');
+                    return;
+                }
+                
+                const now = Date.now();
+                if (now - lastSpinTime < SPIN_DURATION) {
+                    console.warn('Please wait for current spin to finish');
+                    return;
+                }
+                
+                isSpinning = true;
+                lastSpinTime = now;
+                spinBtn.disabled = true;
+                result.textContent = '🎡 Spinning...';
+                result.className = '';
+                
+                const rotations = 5 + Math.random() * 5;
+                const randomDegree = Math.random() * 360;
+                const totalDegrees = (rotations * 360) + randomDegree;
+                
+                canvas.style.transition = `transform ${SPIN_DURATION}ms cubic-bezier(0.17, 0.67, 0.12, 0.99)`;
+                canvas.style.transform = `rotate(${totalDegrees}deg)`;
+                
+                setTimeout(() => {
+                    calculateWinner(randomDegree);
+                    isSpinning = false;
+                    spinBtn.disabled = false;
+                }, SPIN_DURATION);
+                
+            } catch (error) {
+                console.error('Spin error:', error);
+                result.textContent = '⚠️ An error occurred during spin';
+                isSpinning = false;
+                spinBtn.disabled = false;
+            }
+        }
+        
+        function calculateWinner(randomDegree) {
+            try {
+                const adjustedAngle = (360 - (randomDegree % 360)) % 360;
                 const segmentAngle = 360 / prizes.length;
-                const winningIndex = Math.floor(normalizedAngle / segmentAngle);
+                const winningIndex = Math.floor((adjustedAngle % 360) / segmentAngle) % prizes.length;
+                
+                if (winningIndex < 0 || winningIndex >= prizes.length) {
+                    throw new Error('Invalid winning index calculated');
+                }
+                
                 const prize = prizes[winningIndex];
                 
                 result.textContent = `You won: ${prize.label}!`;
                 result.className = 'prize';
                 
                 totalSpins++;
-                if (prize.value >= 200) totalWins++;
+                if (prize.value >= 200) {
+                    totalWins++;
+                }
                 
-                spinsDisplay.textContent = totalSpins;
-                winsDisplay.textContent = totalWins;
+                updateDisplay();
+                saveStats();
                 
-                isSpinning = false;
-                spinBtn.disabled = false;
-            }, 4000);
+                console.log(`Winner: ${prize.label} (Index: ${winningIndex}, Value: ${prize.value})`);
+            } catch (error) {
+                console.error('Winner calculation error:', error);
+                result.textContent = '⚠️ Failed to calculate winner';
+            }
         }
         
-        // Initialize
-        drawWheel();
+        window.addEventListener('DOMContentLoaded', () => {
+            try {
+                setupCanvas();
+                loadStats();
+            } catch (error) {
+                console.error('Initialization error:', error);
+                result.textContent = '⚠️ Failed to initialize game';
+            }
+        });
+        
+        window.addEventListener('resize', setupCanvas);
+        
         spinBtn.addEventListener('click', spin);
     </script>
 </body>
