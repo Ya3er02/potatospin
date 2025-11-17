@@ -1,211 +1,119 @@
-# 🥔 Potato Spin - Complete Blockchain Gaming Platform
+# 🥔 Potato Pet - Virtual Pet Game
 
-**🎮 Live Demo**: https://rawcdn.githack.com/Ya3er02/potatospin/main/index.html
+**Now Featuring**: Full Virtual Pet Mechanics with Tamagotchi-inspired gameplay!
 
-A decentralized spinning wheel game built on Ethereum with provably fair randomness using Chainlink VRF.
+🎮 **Live Demo**: https://rawcdn.githack.com/Ya3er02/potatospin/main/index.html
 
-## ✨ Features
+## Recent Transformation (Phase 2)
 
-### 🎮 Game Features
-- **Provably Fair Gaming** - Chainlink VRF for verifiable randomness
-- **8 Prize Levels** - From Try Again to JACKPOT!
-- **Real-time Stats** - Track your spins and wins
-- **Beautiful Animations** - Smooth spinning wheel with effects
-- **Mobile Responsive** - Play anywhere, anytime
-- **Data Persistence** - localStorage for stats tracking
+PotatoSpin has evolved from a simple Spinning Wheel into a complete Virtual Pet game inspired by POUPY.
 
-### 🍕 Token Economy
-- **POTATO Token (ERC-20)** - In-game currency with 1 billion max supply
-- **NFT Rewards (ERC-721)** - Legendary potatoes for jackpot winners
-- **Staking System** - Earn 10% APY on staked tokens
-- **Leaderboard** - Compete with other players globally
+### What Changed:
+- ✅ Replaced spinning wheel game with Virtual Pet mechanics  
+- ✅ Added 3-stat system (Hunger, Happiness, Cleanliness)
+- ✅ Implemented game loop with 1-second stat decay
+- ✅ Spinning wheel now provides random pet actions (feed, play, bathe, sleep)
+- ✅ Level & XP progression system
+- ✅ localStorage save/load with offline stat decay
+- ✅ Pet survival mechanics (pet dies if stats reach zero)
 
-### 💎 Prize Distribution
-| Prize | Emoji | Probability | Reward | ROI |
-|-------|-------|-------------|--------|-----|
-| JACKPOT | 🎉 | 1% | 1,000 POTATO | 100x |
-| Diamond | 💎 | 3% | 500 POTATO | 50x |
-| Lucky | 🍀 | 5% | 200 POTATO | 20x |
-| Star | ⭐ | 10% | 100 POTATO | 10x |
-| Gift | 🎁 | 15% | 50 POTATO | 5x |
-| Balloon | 🎈 | 20% | 20 POTATO | 2x |
-| Candy | 🍭 | 21% | 10 POTATO | 1x |
-| Try Again | 😢 | 25% | 0 POTATO | 0x |
+## 🎮 Game Features
 
-## 🏗️ Project Structure
+### Pet Mechanics
+- **Virtual Potato Character** - 🥔 grows with you
+- **3 Core Stats**:
+  - 🍗 Hunger: Decreases 2 points/sec (max 150)
+  - 💛 Happiness: Decreases 1 point/sec (max 150)
+  - 🧼 Cleanliness: Decreases 0.5 points/sec (max 150)
+- **Pet States**: Healthy, Hungry, Sad, Dirty, Dead
+- **Survival**: Pet dies if any stat reaches 0
 
-### Smart Contracts (4/4 Complete)
+### Spin Wheel System
+Instead of random prizes, the wheel determines pet actions:
+- **🍽️ FOOD** (33%): Feed pet +30 hunger
+- **🎮 PLAY** (17%): Play +25 happiness, -5 hunger
+- **🚿 BATH** (17%): Bathe +30 cleanliness, -3 hunger  
+- **😴 SLEEP** (17%): Restore all stats significantly
+- **✨ BONUS** (8%): +50 XP (double rewards)
+- **💔 FAIL** (8%): No effect
+
+### Progression
+- **Level System**: 1-50+ levels
+- **XP Gain**: +10 XP per spin, +5 XP per stat recovery
+- **Level Up Rewards**: Character growth + stat boost + new abilities
+- **Dynamic XP Curve**: Requirement scales 1.1x per level
+
+### Persistence
+- Save/Load with localStorage
+- Offline decay calculation (stats decrease while away)
+- Auto-save every action
+- Progress recovery on page reload
+
+## 📊 Original Spinning Wheel (Legacy)
+
+*The original spin-to-win game is now integrated as the primary interaction method. No token economy on-chain yet (Phase 3 feature).*
+
+## 🛠️ Technical Stack
+
+- **Frontend**: Pure HTML/CSS/JavaScript (no frameworks)
+- **Persistence**: localStorage with JSON serialization
+- **Canvas**: 2D wheel drawing with HTML5 Canvas API
+- **Game Loop**: requestAnimationFrame at 60 FPS (decoupled from UI updates)
+- **State Machine**: Pet states + action queue system
+
+## 🚀 Game Architecture (POUPY-Inspired)
+
 ```
-contracts/
-├── PotatoToken.sol         ✅ ERC-20 token with burn functionality
-├── PotatoNFT.sol          ✅ ERC-721 NFTs with rarity tiers
-├── PotatoSpinGame.sol     ✅ Main game logic with Chainlink VRF
-└── PotatoStaking.sol      ✅ Staking contract with 10% APY
-```
-
-### Frontend (Complete)
-```
-├── index.html              ✅ Main game interface
-│   - Fixed wheel calculation bug
-│   - Added localStorage persistence
-│   - Improved accessibility (ARIA labels)
-│   - Responsive design for mobile
-│   - Proper error handling
-```
-
-### Configuration (Complete)
-```
-├── hardhat.config.js       ✅ Development environment setup
-├── .env.example           ✅ Environment variables template
-└── package.json           ✅ Dependencies and scripts
-```
-
-## 🚀 Quick Start
-
-### Prerequisites
-- Node.js v16+
-- Hardhat
-- MetaMask or compatible Web3 wallet
-
-### Installation
-
-```bash
-# Clone the repository
-git clone https://github.com/Ya3er02/potatospin.git
-cd potatospin
-
-# Install dependencies
-npm install
-
-# Copy environment variables
-cp .env.example .env
-
-# Fill in your API keys and private key in .env
-nano .env
-
-# Compile smart contracts
-npx hardhat compile
-
-# Run tests
-npx hardhat test
-
-# Deploy to Sepolia testnet
-npx hardhat run scripts/deploy.js --network sepolia
-
-# Deploy to mainnet (be careful!)
-npx hardhat run scripts/deploy.js --network mainnet
+Index.html
+├── HTML/CSS UI Structure
+├── PotatoPet Class (Pet logic)
+├── Spin Wheel System (6 outcomes)
+├── Game Loop (update + render)
+├── localStorage Manager (persistence)
+└── Event Handlers (clicks)
 ```
 
-## 🎲 How to Play
+## 📱 How to Play
 
-1. **Connect Your Wallet** - Click "Connect Wallet" to link MetaMask
-2. **Check Balance** - Ensure you have POTATO tokens (10 per spin)
-3. **Spin the Wheel** - Click "SPIN THE POTATO!" button
-4. **Win Prizes** - Get random prizes from 0 to 1,000 POTATO
-5. **Jackpot Winners** - Win exclusive NFTs for JACKPOT prize
-
-## 📊 Token Specifications
-
-### POTATO Token (ERC-20)
-- **Name**: Potato Token
-- **Symbol**: POTATO
-- **Decimals**: 18
-- **Max Supply**: 1,000,000,000 POTATO
-- **Initial Supply**: 100,000,000 POTATO
-
-### Staking
-- **APY**: 10%
-- **Lock-up Period**: None - withdraw anytime
-- **Min Stake**: 0.000001 POTATO
+1. **Load Game** - Page automatically loads saved progress
+2. **Monitor Stats** - Watch the 3 stat bars
+3. **Spin the Wheel** - Click "SPIN THE WHEEL! 🎡"
+4. **Pet Responds** - Gets fed, plays, bathes, or sleeps
+5. **Level Up** - Collect XP to grow your pet
+6. **Keep Alive** - Don't let any stat hit zero!
+7. **Save Progress** - Automatically saved to localStorage
 
 ## 🔐 Security Features
 
-- **Chainlink VRF** - Verifiable randomness for fair gameplay
-- **ReentrancyGuard** - Protection against reentrancy attacks
-- **Input Validation** - All external function inputs validated
-- **Event Logging** - All state changes emit events
-- **Owner Controls** - Multi-sig admin capabilities
-
-## 🛠️ Recent Improvements (Current Session)
-
-### Frontend Fixes
-- ✅ Fixed wheel angle calculation bug (critical)
-- ✅ Added input validation throughout
-- ✅ Implemented comprehensive error handling
-- ✅ Added data persistence with localStorage
-- ✅ Enhanced accessibility with ARIA labels
-- ✅ Improved responsive design for mobile
-- ✅ Fixed timing synchronization issues
-- ✅ Added protection against multiple clicks
-
-### Smart Contracts
-- ✅ Added zero address validation to PotatoToken
-- ✅ Added positive amount validation
-- ✅ Enhanced event emission for transparency
-- ✅ Implemented burn functions for token control
-- ✅ Improved NatSpec documentation
-
-### New Smart Contracts
-- ✅ PotatoNFT.sol - ERC-721 contract for jackpot NFTs
-- ✅ PotatoSpinGame.sol - Main game with Chainlink VRF
-- ✅ PotatoStaking.sol - Staking with 10% APY
-
-### Configuration
-- ✅ hardhat.config.js - Complete Hardhat setup
-- ✅ .env.example - All required environment variables
+- Input validation on all stat operations
+- No eval() or unsafe code execution
+- localStorage quota management
+- Offline-safe state calculations
+- XSS protection via textContent
 
 ## 📈 Roadmap
 
-### Phase 1: Core Game (In Progress ✅)
-- [x] Frontend game interface
-- [x] Smart contracts (all 4)
-- [x] Configuration files
-- [x] Bug fixes and improvements
+### Phase 3: Backend & Blockchain
+- [ ] Smart contracts (POTATO token ERC-20)
+- [ ] NFT minting for milestones
+- [ ] Leaderboard API
+- [ ] Cloud save backup
 
-### Phase 2: Backend & Infrastructure
-- [ ] Node.js API server
-- [ ] WebSocket for real-time updates
-- [ ] Database integration
-- [ ] Deployment scripts
+### Phase 4: Advanced Features
+- [ ] Pet breeding system
+- [ ] Mini-games beyond spinning
+- [ ] Social features (trade pets)
+- [ ] Seasonal events
 
-### Phase 3: Advanced Features
-- [ ] Leaderboard system
-- [ ] Social features
-- [ ] Multi-chain support
-- [ ] Mobile app
+## 📄 License
 
-### Phase 4: Mainnet Launch
-- [ ] Security audit
-- [ ] Testnet deployment
-- [ ] Beta testing
-- [ ] Mainnet launch
+MIT License - See LICENSE file
 
-## 🤝 Contributing
+## 🙏 Inspirations
 
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📝 License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 📧 Contact
-
-For questions or suggestions, please reach out to:
-- GitHub: [@Ya3er02](https://github.com/Ya3er02)
-- Email: [your-email@example.com](mailto:your-email@example.com)
-
-## 🙏 Acknowledgments
-
-- **Chainlink** - For VRF randomness
-- **OpenZeppelin** - For secure smart contract libraries
-- **Hardhat** - For development framework
-- **Ethereum Community** - For inspiration and support
+- **POUPY** - Virtual Pet game architecture (GitHub: mts-lucas/POUPY)
+- **Tamagotchi** - Classic pet game mechanics
+- **Ethereum** - Future blockchain integration
 
 ---
 
