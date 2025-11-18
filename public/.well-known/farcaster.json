@@ -1,0 +1,16 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjEyMzQ1LCJ0eXBlIjoiY3VzdG9keSIsImtleSI6IjB4MDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMCJ9",
+    "payload": "eyJkb21haW4iOiJwb3RhdG9zcGluLnh5eiJ9",
+    "signature": "MHhhYmNkZWYwMTIzNDU2Nzg5"
+  },
+  "frame": {
+    "version": "next",
+    "name": "Potato Spin",
+    "iconUrl": "https://potatospin.xyz/icon-512.png",
+    "splashImageUrl": "https://potatospin.xyz/splash.png",
+    "splashBackgroundColor": "#f59719",
+    "homeUrl": "https://potatospin.xyz",
+    "webhookUrl": "https://potatospin.xyz/api/webhook"
+  }
+}
