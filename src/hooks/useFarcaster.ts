@@ -1,38 +1,18 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { sdk } from '@farcaster/miniapp-sdk'
-import type { MiniAppContext } from '@farcaster/miniapp-sdk'
+import { useFarcasterContext } from '@/components/FarcasterProvider'
 
+/**
+ * useFarcaster hook - consumer of global FarcasterProvider context.
+ * Ensures only a single MiniAppContext/SDK load.
+ * Loading completes even if Farcaster init errors, and error is handled by context.
+ */
 export function useFarcaster() {
-  const [isSDKLoaded, setIsSDKLoaded] = useState(false)
-  const [context, setContext] = useState<MiniAppContext | null>(null)
-  const [error, setError] = useState<Error | null>(null)
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        // Initialize the SDK
-        await sdk.actions.ready()
-        setIsSDKLoaded(true)
-
-        // Get Farcaster context
-        const farcasterContext = await sdk.context
-        setContext(farcasterContext)
-      } catch (err) {
-        console.error('Failed to load Farcaster SDK:', err)
-        setError(err as Error)
-      }
-    }
-
-    load()
-  }, [])
-
+  const { isLoaded, context, error } = useFarcasterContext()
   return {
-    isSDKLoaded,
+    isSDKLoaded: isLoaded,
     context,
     error,
-    sdk,
   }
 }
 
