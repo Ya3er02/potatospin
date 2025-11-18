@@ -1,36 +1,48 @@
 {
-  "name": "potatospin",
-  "version": "1.0.0",
-  "description": "Potato Spin - Decentralized Spinning Wheel Game",
-  "main": "index.html",
+  "name": "potato-spin-farcaster",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Potato Spin - Farcaster Mini App on Base Blockchain",
   "scripts": {
-    "test": "hardhat test",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
     "compile": "hardhat compile",
-    "deploy": "hardhat run scripts/deploy.js",
-    "verify": "hardhat run scripts/verify.js"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Ya3er02/potatospin.git"
-  },
-  "keywords": [
-    "blockchain",
-    "ethereum",
-    "game",
-    "web3",
-    "chainlink",
-    "nft"
-  ],
-  "author": "Yaser (@Ya3er02)",
-  "license": "MIT",
-  "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
-    "hardhat": "^2.19.0"
+    "test": "hardhat test",
+    "deploy:testnet": "hardhat run scripts/deploy.js --network baseSepolia",
+    "deploy:mainnet": "hardhat run scripts/deploy.js --network base",
+    "verify": "hardhat verify"
   },
   "dependencies": {
-    "@chainlink/contracts": "^0.8.0",
+    "next": "^14.2.0",
+    "react": "^18.3.0",
+    "react-dom": "^18.3.0",
+    "@farcaster/minikit": "^1.0.0",
+    "wagmi": "^2.5.0",
+    "viem": "^2.9.0",
+    "@coinbase/onchainkit": "^0.15.0",
+    "@tanstack/react-query": "^5.28.0",
+    "framer-motion": "^11.0.0",
+    "react-hot-toast": "^2.4.1",
+    "zustand": "^4.5.0",
+    "@rainbow-me/rainbowkit": "^2.0.0",
+    "ethers": "^6.11.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.11.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "tailwindcss": "^3.4.0",
+    "postcss": "^8.4.0",
+    "autoprefixer": "^10.4.0",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^14.2.0",
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "hardhat": "^2.20.0",
     "@openzeppelin/contracts": "^5.0.0",
-    "dotenv": "^16.3.1",
-    "ethers": "^6.9.0"
+    "@chainlink/contracts": "^1.0.0",
+    "dotenv": "^16.4.0"
   }
 }
