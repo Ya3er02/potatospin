@@ -12,6 +12,17 @@ function validateAddress(envKey: string, input: string | undefined): string {
   return input
 }
 
+function validateChainId(envKey: string, input: string | undefined): number {
+  const DEFAULT_CHAIN_ID = 84532
+  if (!input) return DEFAULT_CHAIN_ID
+  const trimmed = input.trim()
+  const parsed = parseInt(trimmed, 10)
+  if (!Number.isFinite(parsed) || !Number.isInteger(parsed) || parsed < 1) {
+    throw new Error(`Invalid chainId in ${envKey}: ${input}`)
+  }
+  return parsed
+}
+
 export const CONTRACTS = {
   POTATO_TOKEN: validateAddress('NEXT_PUBLIC_POTATO_TOKEN_ADDRESS', process.env.NEXT_PUBLIC_POTATO_TOKEN_ADDRESS),
   GAME_CONTRACT: validateAddress('NEXT_PUBLIC_GAME_CONTRACT_ADDRESS', process.env.NEXT_PUBLIC_GAME_CONTRACT_ADDRESS),
@@ -20,8 +31,10 @@ export const CONTRACTS = {
   REFERRAL_CONTRACT: validateAddress('NEXT_PUBLIC_REFERRAL_CONTRACT_ADDRESS', process.env.NEXT_PUBLIC_REFERRAL_CONTRACT_ADDRESS),
 }
 
+const SAFE_CHAIN_ID = validateChainId('NEXT_PUBLIC_CHAIN_ID', process.env.NEXT_PUBLIC_CHAIN_ID)
+
 export const CHAIN_CONFIG = {
-  chainId: parseInt(process.env.NEXT_PUBLIC_CHAIN_ID || '84532'),
+  chainId: SAFE_CHAIN_ID,
   rpcUrl: process.env.NEXT_PUBLIC_RPC_URL || 'https://sepolia.base.org',
   explorerUrl: process.env.NEXT_PUBLIC_EXPLORER_URL || 'https://sepolia.basescan.org',
 }
