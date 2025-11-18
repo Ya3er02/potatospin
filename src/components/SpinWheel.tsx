@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi'
+import { useState, useEffect } from 'react'
+import { useAccount, useWaitForTransactionReceipt, useWriteContract, useWatchContractEvent } from 'wagmi'
 import { CONTRACTS, GAME_CONTRACT_ABI } from '@/lib/contracts'
 import toast from 'react-hot-toast'
+import { motion, AnimatePresence } from 'framer-motion'
 
 const SPIN_OUTCOMES = [
   { label: '🍟 FOOD', color: '#f59719', probability: 33 },
@@ -16,12 +16,41 @@ const SPIN_OUTCOMES = [
 ]
 
 export function SpinWheel() {
+  const { address } = useAccount()
   const [isSpinning, setIsSpinning] = useState(false)
   const [result, setResult] = useState<string | null>(null)
   const [rotation, setRotation] = useState(0)
+  const [txHash, setTxHash] = useState<string | undefined>()
+  const [spinTimeout, setSpinTimeout] = useState<NodeJS.Timeout | null>(null)
 
   const { writeContract, data: hash } = useWriteContract()
   const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
+
+  useEffect(() => {
+    setTxHash(hash)
+  }, [hash])
+
+  // Listen for SpinCompleted events relevant to this user
+  useWatchContractEvent({
+    address: CONTRACTS.GAME_CONTRACT,
+    abi: GAME_CONTRACT_ABI,
+    eventName: 'SpinCompleted',
+    listener(logs) {
+      logs.forEach((log) => {
+        // Only act on user-specific events
+        if (log.args && log.args.player && address && log.args.player.toLowerCase() === address.toLowerCase()) {
+          const resultValue = Number(log.args.prize) % SPIN_OUTCOMES.length
+          const outcome = SPIN_OUTCOMES[resultValue]
+          setResult(outcome.label)
+          toast.success(`You got: ${outcome.label}!`)
+          setIsSpinning(false)
+          if (spinTimeout) {
+            clearTimeout(spinTimeout)
+          }
+        }
+      })
+    },
+  })
 
   const handleSpin = async () => {
     if (isSpinning || isConfirming) return
@@ -29,34 +58,38 @@ export function SpinWheel() {
     try {
       setIsSpinning(true)
       setResult(null)
+      setTxHash(undefined)
+      // Animate wheel while waiting for blockchain result
+      const spins = 5 + Math.random() * 3
+      const finalRotation = rotation + spins * 360
+      setRotation(finalRotation)
 
-      // Trigger blockchain transaction
       writeContract({
         address: CONTRACTS.GAME_CONTRACT,
         abi: GAME_CONTRACT_ABI,
         functionName: 'spin',
-        args: [1], // 1 spin
+        args: [], // No args for spin()
       })
 
-      // Simulate wheel spin animation
-      const randomOutcome = SPIN_OUTCOMES[Math.floor(Math.random() * SPIN_OUTCOMES.length)]
-      const spins = 5 + Math.random() * 3
-      const finalRotation = rotation + spins * 360 + Math.random() * 360
-      
-      setRotation(finalRotation)
-
-      setTimeout(() => {
+      // Fallback: Timeout in case event isn't received
+      const fallback = setTimeout(() => {
         setIsSpinning(false)
-        setResult(randomOutcome.label)
-        toast.success(`You got: ${randomOutcome.label}!`)
-      }, 3000)
-
+        toast.error('Spin result not received. Please check transaction or try again.')
+      }, 9000)
+      setSpinTimeout(fallback)
     } catch (error) {
       setIsSpinning(false)
       toast.error('Spin failed! Please try again.')
       console.error(error)
     }
   }
+
+  useEffect(
+    () => () => {
+      if (spinTimeout) clearTimeout(spinTimeout)
+    },
+    [spinTimeout]
+  )
 
   return (
     <motion.div
