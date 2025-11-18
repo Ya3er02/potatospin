@@ -116,7 +116,7 @@ All notable changes to this project will be documented in this file.
 
 ```solidity
 address vrfCoordinator = 0x5C210eF41CD1a72de73bF76eC39637bB0d3d7BEE;
-bytes32 keyHash = 0xd729dc84e21ae57ffb6be0053bf2b0668aa2aaf300a2a7b2ddf7dc0bb6e875a8;
+bytes32 keyHash = 0x9e1344a1247c8a1785d0a4681a27152bffdb43666ae5bf7d14d24a5efd44bf71;
 uint256 subscriptionId = YOUR_SUBSCRIPTION_ID;
 uint32 callbackGasLimit = 100000;
 bool nativePayment = false; // true to pay with ETH
