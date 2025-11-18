@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@chainlink/contracts/src/v0.8/vrf/VRFConsumerBaseV2.sol";
-import "@chainlink/contracts/src/v0.8/vrf/interfaces/VRFCoordinatorV2Interface.sol";
+import "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
+import "@chainlink/contracts/src/v0.8/vrf/dev/interfaces/IVRFCoordinatorV2Plus.sol";
+import "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./PotatoToken.sol";
@@ -10,17 +11,18 @@ import "./PotatoNFT.sol";
 
 /**
  * @title PotatoSpinGame
- * @dev Main game contract with Chainlink VRF for verifiable randomness
+ * @dev Main game contract with Chainlink VRF v2.5 for verifiable randomness
  */
-contract PotatoSpinGame is VRFConsumerBaseV2, Ownable, ReentrancyGuard {
-    VRFCoordinatorV2Interface private immutable i_vrfCoordinator;
+contract PotatoSpinGame is VRFConsumerBaseV2Plus, Ownable, ReentrancyGuard {
+    IVRFCoordinatorV2Plus private immutable i_vrfCoordinator;
     
-    // VRF Configuration
+    // VRF v2.5 Configuration (uint256 subscriptionId)
     bytes32 private immutable i_gasLane;
-    uint64 private immutable i_subscriptionId;
+    uint256 private immutable i_subscriptionId; // Changed from uint64 to uint256
     uint32 private immutable i_callbackGasLimit;
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint32 private constant NUM_WORDS = 1;
+    bool private immutable i_nativePayment; // VRF v2.5: support native token payment
     
     // Game Configuration
     uint256 public constant SPIN_COST = 10 * 10**18; // 10 POTATO
@@ -54,18 +56,20 @@ contract PotatoSpinGame is VRFConsumerBaseV2, Ownable, ReentrancyGuard {
     constructor(
         address vrfCoordinator,
         bytes32 gasLane,
-        uint64 subscriptionId,
+        uint256 subscriptionId, // Changed from uint64 to uint256
         uint32 callbackGasLimit,
+        bool nativePayment, // VRF v2.5: native payment flag
         address _potatoToken,
         address _potatoNFT
     ) 
-        VRFConsumerBaseV2(vrfCoordinator) 
+        VRFConsumerBaseV2Plus(vrfCoordinator) 
         Ownable(msg.sender)
     {
-        i_vrfCoordinator = VRFCoordinatorV2Interface(vrfCoordinator);
+        i_vrfCoordinator = IVRFCoordinatorV2Plus(vrfCoordinator);
         i_gasLane = gasLane;
         i_subscriptionId = subscriptionId;
         i_callbackGasLimit = callbackGasLimit;
+        i_nativePayment = nativePayment;
         
         potatoToken = PotatoToken(_potatoToken);
         potatoNFT = PotatoNFT(_potatoNFT);
@@ -84,13 +88,20 @@ contract PotatoSpinGame is VRFConsumerBaseV2, Ownable, ReentrancyGuard {
         potatoToken.transferFrom(msg.sender, address(this), SPIN_COST);
         potatoToken.burn(SPIN_COST);
         
-        // Request randomness from Chainlink VRF
+        // Request randomness from Chainlink VRF v2.5
+        // VRF v2.5 uses VRFV2PlusClient.RandomWordsRequest with extraArgs
         requestId = i_vrfCoordinator.requestRandomWords(
-            i_gasLane,
-            i_subscriptionId,
-            REQUEST_CONFIRMATIONS,
-            i_callbackGasLimit,
-            NUM_WORDS
+            VRFV2PlusClient.RandomWordsRequest({
+                keyHash: i_gasLane,
+                subId: i_subscriptionId,
+                requestConfirmations: REQUEST_CONFIRMATIONS,
+                callbackGasLimit: i_callbackGasLimit,
+                numWords: NUM_WORDS,
+                // VRF v2.5: extraArgs for native payment configuration
+                extraArgs: VRFV2PlusClient._argsToBytes(
+                    VRFV2PlusClient.ExtraArgsV1({nativePayment: i_nativePayment})
+                )
+            })
         );
         
         gameRequests[requestId] = GameSession({
@@ -108,9 +119,13 @@ contract PotatoSpinGame is VRFConsumerBaseV2, Ownable, ReentrancyGuard {
     }
     
     /**
-     * @dev VRF Callback to fulfill randomness
+     * @dev VRF v2.5 Callback to fulfill randomness
+     * @notice Changed to calldata for gas optimization in v2.5
      */
-    function fulfillRandomWords(uint256 requestId, uint256[] memory randomWords) 
+    function fulfillRandomWords(
+        uint256 requestId, 
+        uint256[] calldata randomWords // Changed from memory to calldata
+    ) 
         internal 
         override 
     {
