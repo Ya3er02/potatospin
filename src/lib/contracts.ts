@@ -1,9 +1,23 @@
+// src/lib/contracts.ts
+
+const ETHEREUM_ADDRESS_REGEX = /^0x[a-fA-F0-9]{40}$/
+
+function validateAddress(envKey: string, input: string | undefined): string {
+  if (!input) {
+    throw new Error(`Missing required environment variable: ${envKey}`)
+  }
+  if (!ETHEREUM_ADDRESS_REGEX.test(input)) {
+    throw new Error(`Invalid Ethereum address in ${envKey}: ${input}`)
+  }
+  return input
+}
+
 export const CONTRACTS = {
-  POTATO_TOKEN: process.env.NEXT_PUBLIC_POTATO_TOKEN_ADDRESS as `0x${string}`,
-  GAME_CONTRACT: process.env.NEXT_PUBLIC_GAME_CONTRACT_ADDRESS as `0x${string}`,
-  NFT_CONTRACT: process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS as `0x${string}`,
-  TASKS_CONTRACT: process.env.NEXT_PUBLIC_TASKS_CONTRACT_ADDRESS as `0x${string}`,
-  REFERRAL_CONTRACT: process.env.NEXT_PUBLIC_REFERRAL_CONTRACT_ADDRESS as `0x${string}`,
+  POTATO_TOKEN: validateAddress('NEXT_PUBLIC_POTATO_TOKEN_ADDRESS', process.env.NEXT_PUBLIC_POTATO_TOKEN_ADDRESS),
+  GAME_CONTRACT: validateAddress('NEXT_PUBLIC_GAME_CONTRACT_ADDRESS', process.env.NEXT_PUBLIC_GAME_CONTRACT_ADDRESS),
+  NFT_CONTRACT: validateAddress('NEXT_PUBLIC_NFT_CONTRACT_ADDRESS', process.env.NEXT_PUBLIC_NFT_CONTRACT_ADDRESS),
+  TASKS_CONTRACT: validateAddress('NEXT_PUBLIC_TASKS_CONTRACT_ADDRESS', process.env.NEXT_PUBLIC_TASKS_CONTRACT_ADDRESS),
+  REFERRAL_CONTRACT: validateAddress('NEXT_PUBLIC_REFERRAL_CONTRACT_ADDRESS', process.env.NEXT_PUBLIC_REFERRAL_CONTRACT_ADDRESS),
 }
 
 export const CHAIN_CONFIG = {
