@@ -16,7 +16,6 @@ const SPIN_OUTCOMES = [
 ]
 
 function getWheelGeometry(outcomes) {
-  // Defensive: handle zero/NaN, fallback to equal if all zero
   const total = outcomes.reduce((sum, o) => sum + (isFinite(o.probability) && o.probability > 0 ? o.probability : 0), 0)
   const fallbackAngle = 360 / outcomes.length
   let cumulative = 0
@@ -31,19 +30,14 @@ function getWheelGeometry(outcomes) {
 }
 
 function getSliceClipPath(startAngle, endAngle) {
-  // Wheel center at (50,50), radius 50
-  // Convert angles to radians
   const r = 50
   const startRad = (startAngle - 90) * Math.PI / 180
   const endRad = (endAngle - 90) * Math.PI / 180
-  // Points: center, start arc, end arc
   const x1 = 50 + r * Math.cos(startRad)
   const y1 = 50 + r * Math.sin(startRad)
   const x2 = 50 + r * Math.cos(endRad)
   const y2 = 50 + r * Math.sin(endRad)
-  // large-arc-flag: more than 180 degrees?
   const largeFlag = endAngle - startAngle > 180 ? 1 : 0
-  // Build SVG path: move to center, line to (x1,y1), arc to (x2,y2), close
   return `M50,50 L${x1},${y1} A${r},${r} 0 ${largeFlag} 1 ${x2},${y2} Z`
 }
 
@@ -69,8 +63,8 @@ export function SpinWheel() {
     eventName: 'SpinCompleted',
     listener(logs) {
       logs.forEach((log) => {
-        if (log.args && log.args.player && address && log.args.player.toLowerCase() === address.toLowerCase()) {
-          const resultValue = Number(log.args.prize) % SPIN_OUTCOMES.length
+        if (log.args && log.args.user && address && log.args.user.toLowerCase() === address.toLowerCase()) {
+          const resultValue = Number(log.args.result) % SPIN_OUTCOMES.length
           const outcome = SPIN_OUTCOMES[resultValue]
           setResult(outcome.label)
           toast.success(`You got: ${outcome.label}!`)
@@ -98,7 +92,7 @@ export function SpinWheel() {
         address: CONTRACTS.GAME_CONTRACT,
         abi: GAME_CONTRACT_ABI,
         functionName: 'spin',
-        args: [], // No args for spin()
+        args: [],
       })
 
       const fallback = setTimeout(() => {
@@ -153,7 +147,7 @@ export function SpinWheel() {
           {wheelGeometry.map((slice, idx) => {
             const midAngle = (slice.startAngle + slice.endAngle) / 2
             const rad = (midAngle - 90) * Math.PI / 180
-            const rText = 35 // Text radius in SVG units
+            const rText = 35
             const xText = 50 + rText * Math.cos(rad)
             const yText = 50 + rText * Math.sin(rad)
             return (
