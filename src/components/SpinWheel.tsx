@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useAccount, useWaitForTransactionReceipt, useWriteContract, useWatchContractEvent } from 'wagmi'
 import { CONTRACTS, GAME_CONTRACT_ABI } from '@/lib/contracts'
 import toast from 'react-hot-toast'
@@ -15,6 +15,38 @@ const SPIN_OUTCOMES = [
   { label: '💔 FAIL', color: '#ef4444', probability: 8 },
 ]
 
+function getWheelGeometry(outcomes) {
+  // Defensive: handle zero/NaN, fallback to equal if all zero
+  const total = outcomes.reduce((sum, o) => sum + (isFinite(o.probability) && o.probability > 0 ? o.probability : 0), 0)
+  const fallbackAngle = 360 / outcomes.length
+  let cumulative = 0
+  return outcomes.map((outcome, i) => {
+    let prob = isFinite(outcome.probability) && outcome.probability > 0 ? outcome.probability : 0
+    let angle = total ? (prob / total) * 360 : fallbackAngle
+    const start = cumulative
+    const end = start + angle
+    cumulative += angle
+    return { ...outcome, startAngle: start, endAngle: end, i }
+  })
+}
+
+function getSliceClipPath(startAngle, endAngle) {
+  // Wheel center at (50,50), radius 50
+  // Convert angles to radians
+  const r = 50
+  const startRad = (startAngle - 90) * Math.PI / 180
+  const endRad = (endAngle - 90) * Math.PI / 180
+  // Points: center, start arc, end arc
+  const x1 = 50 + r * Math.cos(startRad)
+  const y1 = 50 + r * Math.sin(startRad)
+  const x2 = 50 + r * Math.cos(endRad)
+  const y2 = 50 + r * Math.sin(endRad)
+  // large-arc-flag: more than 180 degrees?
+  const largeFlag = endAngle - startAngle > 180 ? 1 : 0
+  // Build SVG path: move to center, line to (x1,y1), arc to (x2,y2), close
+  return `M50,50 L${x1},${y1} A${r},${r} 0 ${largeFlag} 1 ${x2},${y2} Z`
+}
+
 export function SpinWheel() {
   const { address } = useAccount()
   const [isSpinning, setIsSpinning] = useState(false)
@@ -22,6 +54,7 @@ export function SpinWheel() {
   const [rotation, setRotation] = useState(0)
   const [txHash, setTxHash] = useState<string | undefined>()
   const [spinTimeout, setSpinTimeout] = useState<NodeJS.Timeout | null>(null)
+  const wheelGeometry = useMemo(() => getWheelGeometry(SPIN_OUTCOMES), [])
 
   const { writeContract, data: hash } = useWriteContract()
   const { isLoading: isConfirming } = useWaitForTransactionReceipt({ hash })
@@ -30,14 +63,12 @@ export function SpinWheel() {
     setTxHash(hash)
   }, [hash])
 
-  // Listen for SpinCompleted events relevant to this user
   useWatchContractEvent({
     address: CONTRACTS.GAME_CONTRACT,
     abi: GAME_CONTRACT_ABI,
     eventName: 'SpinCompleted',
     listener(logs) {
       logs.forEach((log) => {
-        // Only act on user-specific events
         if (log.args && log.args.player && address && log.args.player.toLowerCase() === address.toLowerCase()) {
           const resultValue = Number(log.args.prize) % SPIN_OUTCOMES.length
           const outcome = SPIN_OUTCOMES[resultValue]
@@ -59,7 +90,6 @@ export function SpinWheel() {
       setIsSpinning(true)
       setResult(null)
       setTxHash(undefined)
-      // Animate wheel while waiting for blockchain result
       const spins = 5 + Math.random() * 3
       const finalRotation = rotation + spins * 360
       setRotation(finalRotation)
@@ -71,7 +101,6 @@ export function SpinWheel() {
         args: [], // No args for spin()
       })
 
-      // Fallback: Timeout in case event isn't received
       const fallback = setTimeout(() => {
         setIsSpinning(false)
         toast.error('Spin result not received. Please check transaction or try again.')
@@ -101,30 +130,50 @@ export function SpinWheel() {
         🎰 Spin the Wheel!
       </h2>
 
-      {/* Wheel */}
+      {/* Wheel with SVG slices */}
       <div className="relative w-80 h-80 mx-auto mb-8">
-        <motion.div
-          className="w-full h-full rounded-full border-8 border-potato-500 shadow-2xl overflow-hidden relative"
+        <motion.svg
+          viewBox="0 0 100 100"
+          width={320}
+          height={320}
           animate={{ rotate: rotation }}
           transition={{ duration: 3, ease: 'easeOut' }}
+          className="absolute top-0 left-0"
         >
-          {SPIN_OUTCOMES.map((outcome, index) => (
-            <div
-              key={index}
-              className="absolute w-full h-full flex items-center justify-center text-white font-bold text-lg"
-              style={{
-                background: outcome.color,
-                clipPath: `polygon(50% 50%, ${50 + 50 * Math.cos((index * 60 - 90) * Math.PI / 180)}% ${50 + 50 * Math.sin((index * 60 - 90) * Math.PI / 180)}%, ${50 + 50 * Math.cos(((index + 1) * 60 - 90) * Math.PI / 180)}% ${50 + 50 * Math.sin(((index + 1) * 60 - 90) * Math.PI / 180)}%)`,
-              }}
-            >
-              <span className="absolute" style={{ 
-                transform: `rotate(${index * 60}deg) translateY(-100px)`,
-              }}>
-                {outcome.label}
-              </span>
-            </div>
+          {wheelGeometry.map((slice, idx) => (
+            <path
+              key={slice.label}
+              d={getSliceClipPath(slice.startAngle, slice.endAngle)}
+              fill={slice.color}
+              stroke="#fff"
+              strokeWidth="2"
+            />
           ))}
-        </motion.div>
+          {/* Labels at arc midpoint angle */}
+          {wheelGeometry.map((slice, idx) => {
+            const midAngle = (slice.startAngle + slice.endAngle) / 2
+            const rad = (midAngle - 90) * Math.PI / 180
+            const rText = 35 // Text radius in SVG units
+            const xText = 50 + rText * Math.cos(rad)
+            const yText = 50 + rText * Math.sin(rad)
+            return (
+              <text
+                key={slice.label + '-label'}
+                x={xText}
+                y={yText}
+                fontSize="8"
+                fontWeight="bold"
+                fill="#fff"
+                textAnchor="middle"
+                alignmentBaseline="middle"
+                style={{ userSelect: 'none', pointerEvents: 'none' }}
+                transform={`rotate(${midAngle} 50 50)`}
+              >
+                {slice.label}
+              </text>
+            )
+          })}
+        </motion.svg>
 
         {/* Pointer */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-4 w-0 h-0 border-l-[20px] border-l-transparent border-r-[20px] border-r-transparent border-t-[40px] border-t-red-500 z-10" />
