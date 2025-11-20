@@ -11,22 +11,26 @@ import "./interfaces/IPotatoToken.sol";
 import "./interfaces/IPotatoNFT.sol";
 
 contract PotatoSpinGame is VRFConsumerBaseV2Plus, AccessControl, ReentrancyGuard, Pausable {
-    // ... snip ...
-    // function refundTimedOutRequest (updated per user request)
-    function refundTimedOutRequest(uint256 requestId) external nonReentrant {
-        GameSession storage session = gameRequests[requestId];
-        require(session.player == msg.sender, "Not request owner");
-        require(!session.fulfilled, "Request already fulfilled");
-        require(!refundedRequests[requestId], "Already refunded");
-        require(block.timestamp >= session.timestamp + VRF_REQUEST_TIMEOUT, "Timeout period not reached");
-        // Refunds come from the contract reward pool and reduce contractBalance accordingly
-        require(contractBalance >= SPIN_COST, "reward pool insufficient for refund");
-        contractBalance -= SPIN_COST;
-        refundedRequests[requestId] = true;
-        require(potatoToken.balanceOf(address(this)) >= SPIN_COST, "Insufficient balance for refund");
-        require(potatoToken.transfer(msg.sender, SPIN_COST), "Refund transfer failed");
-        emit EmergencyRefund(msg.sender, SPIN_COST);
-        emit VRFRequestTimedOut(requestId, msg.sender);
+    // ... snip (rest unchanged) ...
+
+    event TokensWithdrawn(address indexed recipient, uint256 amount); // Ensure event present
+
+    // ... withdrawal function
+    /**
+     * @dev Admin-only withdrawal from the reward pool
+     */
+    function adminWithdrawTokens(uint256 amount)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+        nonReentrant
+    {
+        require(amount > 0, "Withdraw amount must be > 0");
+        require(potatoToken.balanceOf(address(this)) >= amount, "Insufficient token balance");
+        require(contractBalance >= amount, "Reward pool insufficient");
+        contractBalance -= amount;
+        require(potatoToken.transfer(msg.sender, amount), "Token withdrawal failed");
+        emit TokensWithdrawn(msg.sender, amount);
     }
+
     // ... rest of contract unchanged ...
 }
