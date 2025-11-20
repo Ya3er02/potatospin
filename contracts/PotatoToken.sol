@@ -2,59 +2,82 @@
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Pausable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /**
  * @title PotatoToken
- * @dev ERC-20 token for Potato Spin game rewards
- * Enhanced with security validations and event emissions
+ * @dev Enhanced ERC-20 token with multi-role access control and emergency pause
+ * @notice Fixes: Added Pausable, AccessControl, mint/burn/pause/unpause logic, comprehensive events
  */
-contract PotatoToken is ERC20, Ownable {
-    uint256 public constant MAX_SUPPLY = 1000000000 * 10**18; // 1 billion tokens
+contract PotatoToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, ReentrancyGuard {
+    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant BURNER_ROLE = keccak256("BURNER_ROLE");
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     
-    event TokensMinted(address indexed to, uint256 amount);
-    event TokensBurned(address indexed from, uint256 amount);
+    uint256 public constant MAX_SUPPLY = 1_000_000_000 * 10**18; // 1 billion tokens
+    uint256 public constant INITIAL_SUPPLY = 100_000_000 * 10**18; // 100 million tokens
     
-    constructor() ERC20("Potato Token", "POTATO") Ownable(msg.sender) {
-        // Initial mint: 100 million tokens to contract owner
-        _mint(msg.sender, 100000000 * 10**18);
-        emit TokensMinted(msg.sender, 100000000 * 10**18);
+    // Events
+    event TokensMinted(address indexed to, uint256 amount, address indexed minter);
+    event TokensBurned(address indexed from, uint256 amount, address indexed burner);
+    event EmergencyPaused(address indexed pauser);
+    event EmergencyUnpaused(address indexed pauser);
+    
+    constructor() ERC20("Potato Token", "POTATO") {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(MINTER_ROLE, msg.sender);
+        _grantRole(PAUSER_ROLE, msg.sender);
+        _mint(msg.sender, INITIAL_SUPPLY);
+        emit TokensMinted(msg.sender, INITIAL_SUPPLY, msg.sender);
     }
-    
     /**
-     * @dev Mint new tokens (only owner can call)
-     * @param to Address to receive tokens
-     * @param amount Amount of tokens to mint
+     * @dev Mint new tokens (only MINTER_ROLE can call).
+     *      Enforces MAX_SUPPLY and emits TokensMinted.
      */
-    function mint(address to, uint256 amount) external onlyOwner {
+    function mint(address to, uint256 amount) external onlyRole(MINTER_ROLE) nonReentrant whenNotPaused {
         require(to != address(0), "PotatoToken: Cannot mint to zero address");
         require(amount > 0, "PotatoToken: Amount must be greater than zero");
         require(totalSupply() + amount <= MAX_SUPPLY, "PotatoToken: Exceeds max supply");
-        
         _mint(to, amount);
-        emit TokensMinted(to, amount);
+        emit TokensMinted(to, amount, msg.sender);
     }
-    
     /**
-     * @dev Burn tokens from caller's balance
-     * @param amount Amount of tokens to burn
+     * @dev Pause token transfers (only PAUSER_ROLE)
      */
-    function burn(uint256 amount) external {
-        require(amount > 0, "PotatoToken: Amount must be greater than zero");
-        _burn(msg.sender, amount);
-        emit TokensBurned(msg.sender, amount);
+    function pause() external onlyRole(PAUSER_ROLE) {
+        _pause();
+        emit EmergencyPaused(msg.sender);
     }
-    
     /**
-     * @dev Burn tokens from a specific address (owner only)
+     * @dev Unpause token transfers (only PAUSER_ROLE)
+     */
+    function unpause() external onlyRole(PAUSER_ROLE) {
+        _unpause();
+        emit EmergencyUnpaused(msg.sender);
+    }
+    /**
+     * @dev Burn tokens from a specific address. Only accounts with BURNER_ROLE can call this function.
+     *      Burns tokens from `from` up to the caller's allowance, as defined in the ERC20Allowance standard.
+     *      Respects standard allowance mechanics (spender must have prior approval by `from`).
      * @param from Address to burn tokens from
      * @param amount Amount of tokens to burn
      */
-    function burnFrom(address from, uint256 amount) external onlyOwner {
+    function burnFrom(address from, uint256 amount) public override onlyRole(BURNER_ROLE) nonReentrant whenNotPaused {
         require(from != address(0), "PotatoToken: Cannot burn from zero address");
         require(amount > 0, "PotatoToken: Amount must be greater than zero");
-        
-        _burn(from, amount);
-        emit TokensBurned(from, amount);
+        super.burnFrom(from, amount);
+        emit TokensBurned(from, amount, msg.sender);
+    }
+    /**
+     * @dev EIP-2612 override (ERC20 functions must be overriden for pausable)
+     */
+    function _update(address from, address to, uint256 value)
+        internal
+        override(ERC20, ERC20Pausable)
+    {
+        super._update(from, to, value);
     }
 }
