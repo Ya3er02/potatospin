@@ -61,9 +61,10 @@ npm run deploy:testnet
 
 This will:
 - Deploy all contracts
-- Setup roles and permissions
+- Set up roles and permissions
 - Fund game contract with tokens
-- Save addresses to `deployments/baseSepolia.json`
+- Save main deployment data to `deployments/baseSepolia.json`
+- Also generate a ready-to-use `deployments/baseSepolia.env` containing only addresses for direct import to your `.env`
 
 ### 7. Add VRF Consumer
 
@@ -84,10 +85,19 @@ Or use commands from deployment output.
 
 ### 9. Update Frontend Config
 
-Copy contract addresses from `deployments/baseSepolia.env` to your `.env`:
+Copy addresses and contract config from `deployments/baseSepolia.env` to `.env` for frontend builds:
 
 ```bash
 cat deployments/baseSepolia.env >> .env
+```
+
+> `deployments/baseSepolia.json` contains full deployment metadata and all config fields.
+> `deployments/baseSepolia.env` contains only addresses and ready-to-import vars.
+
+Alternatively, advanced users can convert `.json` to `.env` as needed:
+
+```bash
+jq -r '.contracts | to_entries[] | "[31mNEXT_PUBLIC_" + (.key | ascii_upcase) + "_ADDRESS=" + .value' deployments/baseSepolia.json >> .env
 ```
 
 ### 10. Test Game Functions
