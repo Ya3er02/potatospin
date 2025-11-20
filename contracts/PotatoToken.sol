@@ -10,7 +10,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 /**
  * @title PotatoToken
  * @dev Enhanced ERC-20 token with multi-role access control and emergency pause
- * @notice Fixes: Added Pausable, AccessControl, proper burn permissions, comprehensive events
+ * @notice Fixes: Added Pausable, AccessControl, mint/burn/pause/unpause logic, comprehensive events
  */
 contract PotatoToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, ReentrancyGuard {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
@@ -33,7 +33,31 @@ contract PotatoToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, Reen
         _mint(msg.sender, INITIAL_SUPPLY);
         emit TokensMinted(msg.sender, INITIAL_SUPPLY, msg.sender);
     }
-    
+    /**
+     * @dev Mint new tokens (only MINTER_ROLE can call).
+     *      Enforces MAX_SUPPLY and emits TokensMinted.
+     */
+    function mint(address to, uint256 amount) external onlyRole(MINTER_ROLE) nonReentrant whenNotPaused {
+        require(to != address(0), "PotatoToken: Cannot mint to zero address");
+        require(amount > 0, "PotatoToken: Amount must be greater than zero");
+        require(totalSupply() + amount <= MAX_SUPPLY, "PotatoToken: Exceeds max supply");
+        _mint(to, amount);
+        emit TokensMinted(to, amount, msg.sender);
+    }
+    /**
+     * @dev Pause token transfers (only PAUSER_ROLE)
+     */
+    function pause() external onlyRole(PAUSER_ROLE) {
+        _pause();
+        emit EmergencyPaused(msg.sender);
+    }
+    /**
+     * @dev Unpause token transfers (only PAUSER_ROLE)
+     */
+    function unpause() external onlyRole(PAUSER_ROLE) {
+        _unpause();
+        emit EmergencyUnpaused(msg.sender);
+    }
     /**
      * @dev Burn tokens from a specific address. Only accounts with BURNER_ROLE can call this function.
      *      Burns tokens from `from` up to the caller's allowance, as defined in the ERC20Allowance standard.
@@ -47,5 +71,13 @@ contract PotatoToken is ERC20, ERC20Burnable, ERC20Pausable, AccessControl, Reen
         super.burnFrom(from, amount);
         emit TokensBurned(from, amount, msg.sender);
     }
-    // ... rest of contract unchanged ...
+    /**
+     * @dev EIP-2612 override (ERC20 functions must be overriden for pausable)
+     */
+    function _update(address from, address to, uint256 value)
+        internal
+        override(ERC20, ERC20Pausable)
+    {
+        super._update(from, to, value);
+    }
 }
