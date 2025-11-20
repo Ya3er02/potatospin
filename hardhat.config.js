@@ -4,7 +4,18 @@ require("hardhat-gas-reporter");
 require("solidity-coverage");
 require("dotenv").config();
 
-const PRIVATE_KEY = process.env.PRIVATE_KEY || "0x0000000000000000000000000000000000000000000000000000000000000001";
+function getDeployAccounts(networkName) {
+  if (networkName === "base" || networkName === "baseSepolia") {
+    if (!process.env.PRIVATE_KEY || process.env.PRIVATE_KEY.length !== 66) {
+      throw new Error(
+        `\n❌ PRIVATE_KEY must be set as a valid 0x-prefixed (64 byte) hex string for deployments to ${networkName}.\nPlease configure PRIVATE_KEY in your .env file and never use a public/private test key on live networks.\n`
+      );
+    }
+    return [process.env.PRIVATE_KEY];
+  }
+  return undefined; // Don't set accounts for local/dev, uses hardhat keys
+}
+
 const BASESCAN_API_KEY = process.env.BASESCAN_API_KEY || "";
 
 /** @type import('hardhat/config').HardhatUserConfig */
@@ -12,19 +23,14 @@ module.exports = {
   solidity: {
     version: "0.8.20",
     settings: {
-      optimizer: {
-        enabled: true,
-        runs: 200,
-      },
+      optimizer: { enabled: true, runs: 200 },
       viaIR: false,
     },
   },
   networks: {
     hardhat: {
       chainId: 31337,
-      forking: {
-        enabled: false,
-      },
+      forking: { enabled: false },
     },
     localhost: {
       url: "http://127.0.0.1:8545",
@@ -32,22 +38,19 @@ module.exports = {
     },
     baseSepolia: {
       url: process.env.BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
-      accounts: [PRIVATE_KEY],
+      accounts: getDeployAccounts("baseSepolia"),
       chainId: 84532,
       gasPrice: "auto",
     },
     base: {
       url: process.env.BASE_RPC_URL || "https://mainnet.base.org",
-      accounts: [PRIVATE_KEY],
+      accounts: getDeployAccounts("base"),
       chainId: 8453,
       gasPrice: "auto",
     },
   },
   etherscan: {
-    apiKey: {
-      baseSepolia: BASESCAN_API_KEY,
-      base: BASESCAN_API_KEY,
-    },
+    apiKey: { baseSepolia: BASESCAN_API_KEY, base: BASESCAN_API_KEY },
     customChains: [
       {
         network: "baseSepolia",
@@ -80,7 +83,5 @@ module.exports = {
     cache: "./cache",
     artifacts: "./artifacts",
   },
-  mocha: {
-    timeout: 200000,
-  },
+  mocha: { timeout: 200000 },
 };
