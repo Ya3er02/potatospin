@@ -26,7 +26,7 @@ contract PotatoSpinGame is VRFConsumerBaseV2Plus, AccessControl, ReentrancyGuard
     uint256 private immutable i_subscriptionId;
     uint32 private constant MIN_CALLBACK_GAS_LIMIT = 100_000;
     uint32 private constant MAX_CALLBACK_GAS_LIMIT = 2_500_000;
-    uint32 private i_callbackGasLimit;
+    uint32 private s_callbackGasLimit;
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint32 private constant NUM_WORDS = 1;
     bool private immutable i_nativePayment;
@@ -103,7 +103,7 @@ contract PotatoSpinGame is VRFConsumerBaseV2Plus, AccessControl, ReentrancyGuard
         i_vrfCoordinator = IVRFCoordinatorV2Plus(vrfCoordinator);
         i_gasLane = gasLane;
         i_subscriptionId = subscriptionId;
-        i_callbackGasLimit = callbackGasLimit;
+        s_callbackGasLimit = callbackGasLimit;
         i_nativePayment = nativePayment;
         
         potatoToken = IPotatoToken(_potatoToken);
@@ -147,7 +147,7 @@ contract PotatoSpinGame is VRFConsumerBaseV2Plus, AccessControl, ReentrancyGuard
                 keyHash: i_gasLane,
                 subId: i_subscriptionId,
                 requestConfirmations: REQUEST_CONFIRMATIONS,
-                callbackGasLimit: i_callbackGasLimit,
+                callbackGasLimit: s_callbackGasLimit,
                 numWords: NUM_WORDS,
                 extraArgs: VRFV2PlusClient._argsToBytes(
                     VRFV2PlusClient.ExtraArgsV1({nativePayment: i_nativePayment})
@@ -338,8 +338,8 @@ contract PotatoSpinGame is VRFConsumerBaseV2Plus, AccessControl, ReentrancyGuard
             "Invalid gas limit"
         );
         
-        uint32 oldLimit = i_callbackGasLimit;
-        i_callbackGasLimit = newLimit;
+        uint32 oldLimit = s_callbackGasLimit;
+        s_callbackGasLimit = newLimit;
         emit CallbackGasLimitUpdated(oldLimit, newLimit);
     }
     
