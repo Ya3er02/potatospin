@@ -97,7 +97,7 @@ cat deployments/baseSepolia.env >> .env
 Alternatively, advanced users can convert `.json` to `.env` as needed:
 
 ```bash
-jq -r '.contracts | to_entries[] | "[31mNEXT_PUBLIC_" + (.key | ascii_upcase) + "_ADDRESS=" + .value' deployments/baseSepolia.json >> .env
+jq -r '.contracts | to_entries[] | "NEXT_PUBLIC_" + (.key | ascii_upcase) + "_ADDRESS=" + .value' deployments/baseSepolia.json >> .env
 ```
 
 ### 10. Test Game Functions
