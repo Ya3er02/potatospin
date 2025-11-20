@@ -10,17 +10,10 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "./interfaces/IPotatoToken.sol";
 import "./interfaces/IPotatoNFT.sol";
 
-/**
- * @title PotatoSpinGame
- * @dev Enhanced game contract with comprehensive security measures
- */
 contract PotatoSpinGame is VRFConsumerBaseV2Plus, AccessControl, ReentrancyGuard, Pausable {
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
     bytes32 public constant PRIZE_MANAGER_ROLE = keccak256("PRIZE_MANAGER_ROLE");
-    
     IVRFCoordinatorV2Plus private immutable i_vrfCoordinator;
-    
-    // VRF v2.5 Configuration
     bytes32 private immutable i_gasLane;
     uint256 private immutable i_subscriptionId;
     uint32 private constant MIN_CALLBACK_GAS_LIMIT = 100_000;
@@ -29,19 +22,17 @@ contract PotatoSpinGame is VRFConsumerBaseV2Plus, AccessControl, ReentrancyGuard
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint32 private constant NUM_WORDS = 1;
     bool private immutable i_nativePayment;
-    
-    // Game Configuration
+
     uint256 public constant SPIN_COST = 10 * 10**18;
     uint256 public constant MIN_REWARD = 0;
-    uint256 public constant MAX_REWARD = 10_000 * 10**18; 
+    uint256 public constant MAX_REWARD = 10_000 * 10**18;
     uint256 public constant COOLDOWN_PERIOD = 3 seconds;
     uint256 public constant VRF_REQUEST_TIMEOUT = 10 minutes;
-    
+
     IPotatoToken public potatoToken;
     IPotatoNFT public potatoNFT;
-    
+
     enum PrizeType { TRY_AGAIN, CANDY, BALLOON, GIFT, STAR, LUCKY, DIAMOND, JACKPOT }
-    
     struct GameSession {
         address player;
         uint256 timestamp;
@@ -50,21 +41,20 @@ contract PotatoSpinGame is VRFConsumerBaseV2Plus, AccessControl, ReentrancyGuard
         PrizeType prize;
         uint256 reward;
     }
-    
+
     mapping(uint256 => GameSession) public gameRequests;
     mapping(address => uint256) public playerSpins;
     mapping(address => uint256) public playerWins;
     mapping(address => uint256) public playerEarnings;
     mapping(address => uint256) public lastSpinTime;
     mapping(uint256 => bool) public refundedRequests;
-    
+
     uint8[8] public prizeProbabilities = [25, 21, 20, 15, 10, 5, 3, 1];
     uint256[8] public prizeRewards = [0, 10, 20, 50, 100, 200, 500, 1000];
-    
     uint256 public totalSpins;
     uint256 public totalRewardsDistributed;
     uint256 public contractBalance;
-    
+
     event SpinRequested(address indexed player, uint256 indexed requestId, uint256 timestamp);
     event SpinResult(address indexed player, uint256 indexed requestId, PrizeType prize, uint256 reward);
     event JackpotWon(address indexed player, uint256 nftTokenId, uint256 timestamp);
@@ -75,7 +65,7 @@ contract PotatoSpinGame is VRFConsumerBaseV2Plus, AccessControl, ReentrancyGuard
     event TokensWithdrawn(address indexed recipient, uint256 amount);
     event VRFRequestTimedOut(uint256 indexed requestId, address indexed player);
     event EmergencyRefund(address indexed player, uint256 amount);
-    
+
     constructor(
         address vrfCoordinator,
         bytes32 gasLane,
@@ -104,9 +94,41 @@ contract PotatoSpinGame is VRFConsumerBaseV2Plus, AccessControl, ReentrancyGuard
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(OPERATOR_ROLE, msg.sender);
         _grantRole(PRIZE_MANAGER_ROLE, msg.sender);
-
-        // contractBalance sync with actual token balance if pre-funded
         contractBalance = potatoToken.balanceOf(address(this));
     }
 
-    // ...rest of contract unchanged (functionality remains as before)...
+    function spin() external nonReentrant whenNotPaused returns (uint256 requestId) {
+        require(potatoToken.balanceOf(msg.sender) >= SPIN_COST, "Insufficient POTATO tokens");
+        require(block.timestamp >= lastSpinTime[msg.sender] + COOLDOWN_PERIOD, "Cooldown period active");
+        lastSpinTime[msg.sender] = block.timestamp;
+        playerSpins[msg.sender]++;
+        totalSpins++;
+        require(potatoToken.transferFrom(msg.sender, address(this), SPIN_COST), "Token transfer failed");
+        potatoToken.burn(SPIN_COST);
+        require(contractBalance >= SPIN_COST, "Reward pool contractBalance underflow");
+        contractBalance -= SPIN_COST;
+        requestId = i_vrfCoordinator.requestRandomWords(
+            VRFV2PlusClient.RandomWordsRequest({
+                keyHash: i_gasLane,
+                subId: i_subscriptionId,
+                requestConfirmations: REQUEST_CONFIRMATIONS,
+                callbackGasLimit: s_callbackGasLimit,
+                numWords: NUM_WORDS,
+                extraArgs: VRFV2PlusClient._argsToBytes(
+                    VRFV2PlusClient.ExtraArgsV1({nativePayment: i_nativePayment})
+                )
+            })
+        );
+        gameRequests[requestId] = GameSession({
+            player: msg.sender,
+            timestamp: block.timestamp,
+            fulfilled: false,
+            randomWord: 0,
+            prize: PrizeType.TRY_AGAIN,
+            reward: 0
+        });
+        emit SpinRequested(msg.sender, requestId, block.timestamp);
+        return requestId;
+    }
+
+    // ...rest of contract unchanged...
