@@ -11,26 +11,26 @@ import "./interfaces/IPotatoToken.sol";
 import "./interfaces/IPotatoNFT.sol";
 
 contract PotatoSpinGame is VRFConsumerBaseV2Plus, AccessControl, ReentrancyGuard, Pausable {
-    // ... snip (rest unchanged) ...
+    // ... snip ...
+    uint256 public constant SPIN_COST = 10 * 10**18;
+    uint256 public constant MIN_REWARD = 0;
+    uint256 public constant MAX_REWARD = 10_000 * 10**18; // 10k POTATO in wei
+    uint256 public constant MIN_REWARD_BASE = 0;
+    uint256 public constant MAX_REWARD_BASE = 10_000;     // 10k POTATO base units
+    // ... rest unchanged ...
 
-    event TokensWithdrawn(address indexed recipient, uint256 amount); // Ensure event present
-
-    // ... withdrawal function
-    /**
-     * @dev Admin-only withdrawal from the reward pool
-     */
-    function adminWithdrawTokens(uint256 amount)
-        external
-        onlyRole(DEFAULT_ADMIN_ROLE)
-        nonReentrant
+    function updatePrizeRewards(uint256[8] memory newRewards) 
+        external 
+        onlyRole(PRIZE_MANAGER_ROLE)
     {
-        require(amount > 0, "Withdraw amount must be > 0");
-        require(potatoToken.balanceOf(address(this)) >= amount, "Insufficient token balance");
-        require(contractBalance >= amount, "Reward pool insufficient");
-        contractBalance -= amount;
-        require(potatoToken.transfer(msg.sender, amount), "Token withdrawal failed");
-        emit TokensWithdrawn(msg.sender, amount);
+        for (uint8 i = 0; i < 8; i++) {
+            require(
+                newRewards[i] >= MIN_REWARD_BASE && newRewards[i] <= MAX_REWARD_BASE,
+                "Reward must be 0 to 10,000 base units"
+            );
+        }
+        prizeRewards = newRewards;
+        emit PrizeRewardsUpdated(newRewards, msg.sender);
     }
-
     // ... rest of contract unchanged ...
 }
